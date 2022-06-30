@@ -137,12 +137,15 @@ def bars_test():
 
     # initialize visualizer
     print("Initializing visualizer")
-    theta_gen["W"] = gfs
     visualizer = Visualizer(
         viz_every=args.viz_every if args.viz_every is not None else args.no_epochs,
         output_directory=output_directory,
-        datapoints=data[:15],
-        theta_gen=theta_gen,
+        datapoints=data[:15].cpu(),
+        theta_gen={
+            "pies": theta_gen["pies"].detach().cpu(),
+            "sigma2": theta_gen["sigma2"].detach().cpu(),
+            "W": gfs.cpu(),
+        },
         L_gen=ll_gen,
         gif_framerate=args.gif_framerate,
     )
