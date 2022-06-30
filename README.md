@@ -17,13 +17,13 @@ $ conda create -n tvo python==3.8
 $ conda activate tvo
 ```
 
-Next, make sure to install the packages specified in `requirements.txt `:
+Make sure to install all packages specified under [requirements](requirements.txt):
 
 ```bash
 $ pip install -r requirements.txt
 ```
 
-Finally, `tvo` can be set up:
+Now, you are ready to install the TVO package:
 
 ```bash
 $ git clone https://github.com/tvlearn/tvo.git
@@ -33,7 +33,7 @@ $ python setup.py install
 $ cd ..
 ```
 
-Likewise, install `tvutil` as follows:
+Utilities can be installed via:
 
 ```bash
 $ git clone https://github.com/tvlearn/tvutil.git
