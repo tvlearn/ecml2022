@@ -41,3 +41,14 @@ $ cd tvutil
 $ python setup.py install
 $ cd ..
 ```
+
+## Reference
+
+```bibtex
+@inproceedings{DrefsEtAl2022,
+  title={{Direct Evolutionary Optimization of Variational Autoencoders With Binary Latents}},
+  author={Drefs, Jakob and Guiraud, Enrico and Panagiotou Filippos and J{\"o}rg L{\"u}cke},
+  booktitle={Machine Learning and Knowledge Discovery in Databases. Research Track, accepted},
+  year={2022}
+}
+```
