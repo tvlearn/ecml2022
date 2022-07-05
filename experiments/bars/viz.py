@@ -19,21 +19,25 @@ class Visualizer(object):
         self,
         output_directory,
         viz_every,
-        datapoints,
+        train_samples,
         theta_gen,
         L_gen=None,
+        test_samples=None,
+        test_marginals_gen=None,
         sort_acc_to_desc_priors=True,
         gif_framerate=None,
     ):
         self._output_directory = output_directory
         self._viz_every = viz_every
-        self._datapoints = datapoints
+        self._train_samples = train_samples
         self._theta_gen = theta_gen
         self._L_gen = L_gen
+        self._test_samples = test_samples
+        self._test_marginals_gen = test_marginals_gen
         self._sort_acc_to_desc_priors = sort_acc_to_desc_priors
         self._cmap_weights = plt.cm.jet
-        self._cmap_datapoints = (
-            plt.cm.gray if datapoints.dtype == to.uint8 else plt.cm.jet
+        self._cmap_train_samples = (
+            plt.cm.gray if train_samples.dtype == to.uint8 else plt.cm.jet
         )
         self._gif_framerate = gif_framerate
         self._labelsize = 10
@@ -41,28 +45,43 @@ class Visualizer(object):
 
         self._memory = {k: [] for k in ["F", "sigma2"]}
 
-        positions = {
-            "datapoints": [0.0, 0.0, 0.07, 0.94],
-            "W_gen": [0.08, 0.0, 0.1, 0.94],
-            "W": [0.2, 0.0, 0.1, 0.94],
-            "F": [0.4, 0.76, 0.58, 0.23],
-            "sigma2": [0.4, 0.43, 0.58, 0.23],
-            "pies": [0.4, 0.1, 0.58, 0.23],
-        }
+        positions = (
+            {
+                "train_samples": [0.0, 0.0, 0.07, 0.94],
+                "W_gen": [0.08, 0.0, 0.1, 0.94],
+                "W": [0.2, 0.0, 0.1, 0.94],
+                "F": [0.4, 0.81, 0.58, 0.17],
+                "sigma2": [0.4, 0.62, 0.58, 0.17],
+                "pies": [0.4, 0.33, 0.58, 0.17],
+                "test_samples": [0.34, 0.07, 0.75, 0.11],
+            }
+            if test_samples is not None
+            else {
+                "train_samples": [0.0, 0.0, 0.07, 0.94],
+                "W_gen": [0.08, 0.0, 0.1, 0.94],
+                "W": [0.2, 0.0, 0.1, 0.94],
+                "F": [0.4, 0.76, 0.58, 0.23],
+                "sigma2": [0.4, 0.43, 0.58, 0.23],
+                "pies": [0.4, 0.1, 0.58, 0.23],
+            }
+        )
+
         self._fig = plt.figure()
         self._axes = {k: self._fig.add_axes(v) for k, v in positions.items()}
         self._handles = {k: None for k in positions}
         for k in theta_gen.keys():
             self._handles["{}_gen".format(k)] = None
         self._handles["L_gen"] = None
-        self._viz_datapoints()
+        self._viz_train_samples()
         self._viz_gen_weights()
+        if test_samples is not None:
+            self._viz_test_samples()
 
-    def _viz_datapoints(self):
-        assert "datapoints" in self._axes
-        ax = self._axes["datapoints"]
-        datapoints = self._datapoints
-        N, D = datapoints.shape
+    def _viz_train_samples(self):
+        assert "train_samples" in self._axes
+        ax = self._axes["train_samples"]
+        train_samples = self._train_samples
+        N, D = train_samples.shape
         (
             grid,
             cmap,
@@ -70,7 +89,7 @@ class Visualizer(object):
             vmax,
             scale_suff,
         ) = make_grid_with_black_boxes_and_white_background(
-            images=datapoints.numpy().reshape(
+            images=train_samples.numpy().reshape(
                 N, 1, int(math.sqrt(D)), int(math.sqrt(D))
             ),
             nrow=int(math.ceil(N / 16)),
@@ -78,17 +97,19 @@ class Visualizer(object):
             padding=8,
             repeat=20,
             global_clim=True,
-            sym_clim=self._cmap_datapoints == plt.cm.jet,
-            cmap=self._cmap_datapoints,
+            sym_clim=self._cmap_train_samples == plt.cm.jet,
+            cmap=self._cmap_train_samples,
             eps=0.02,
         )
 
-        self._handles["datapoints"] = ax.imshow(np.squeeze(grid), interpolation="none")
+        self._handles["train_samples"] = ax.imshow(
+            np.squeeze(grid), interpolation="none"
+        )
         ax.axis("off")
 
-        self._handles["datapoints"].set_cmap(cmap)
-        self._handles["datapoints"].set_clim(vmin=vmin, vmax=vmax)
-        ax.set_title(r"$\vec{y}^{\,(n)}$")
+        self._handles["train_samples"].set_cmap(cmap)
+        self._handles["train_samples"].set_clim(vmin=vmin, vmax=vmax)
+        ax.set_title(r"$\vec{y}^{\,(n)}$", fontsize=self._labelsize)
 
     def _viz_gen_weights(self):
         assert "W_gen" in self._axes
@@ -122,7 +143,7 @@ class Visualizer(object):
             self._handles["W_gen"].set_data(np.squeeze(grid))
         self._handles["W_gen"].set_cmap(cmap)
         self._handles["W_gen"].set_clim(vmin=vmin, vmax=vmax)
-        ax.set_title(r"$W^{\mathrm{gen}}$")
+        ax.set_title(r"$\vec{W}_{h}^{\mathrm{gen}}$", fontsize=self._labelsize)
 
     def _viz_weights(self, epoch, W, inds_sort=None):
         assert "W" in self._axes
@@ -154,7 +175,9 @@ class Visualizer(object):
             self._handles["W"].set_data(np.squeeze(grid))
         self._handles["W"].set_cmap(cmap)
         self._handles["W"].set_clim(vmin=vmin, vmax=vmax)
-        ax.set_title("W @ {}".format(epoch))
+        ax.set_title(
+            r"$\vec{\mu}(\vec{e_h};W)$" + "@{}".format(epoch), fontsize=self._labelsize
+        )
 
     def _viz_free_energy(self):
         memory = self._memory
@@ -170,14 +193,18 @@ class Visualizer(object):
                 "b",
                 label=r"$\mathcal{F}(\Phi,\Theta)$",
             )
-            ax.set_xlabel("Epoch", fontsize=self._labelsize)
+            # ax.set_xlabel("Epoch", fontsize=self._labelsize)
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+            ax.set_xticklabels(())
             add_legend = True
         else:
             self._handles["F"].set_xdata(xdata)
             self._handles["F"].set_ydata(ydata_learned)
             ax.relim()
             ax.autoscale_view()
+            ax.set_ylim(
+                [ydata_learned[int(0.1 * len(ydata_learned))], ax.get_ylim()[1]]
+            )
             add_legend = False
 
         if self._L_gen is not None:
@@ -278,7 +305,84 @@ class Visualizer(object):
         if add_legend:
             ax.legend(prop={"size": self._legendfontsize}, ncol=2)
 
-    def _viz_epoch(self, epoch, F, theta):
+    def _viz_test_samples(self):
+        assert "test_samples" in self._axes
+        assert self._test_samples is not None
+        ax = self._axes["test_samples"]
+        test_samples = self._test_samples
+        N, D = test_samples.shape
+
+        (
+            grid,
+            cmap,
+            vmin,
+            vmax,
+            scale_suff,
+        ) = make_grid_with_black_boxes_and_white_background(
+            images=test_samples.numpy().reshape(
+                N, 1, int(math.sqrt(D)), int(math.sqrt(D))
+            ),
+            nrow=N,
+            surrounding=4,
+            padding=20,
+            repeat=20,
+            global_clim=True,
+            sym_clim=self._cmap_train_samples == plt.cm.jet,
+            cmap=self._cmap_train_samples,
+            eps=0.02,
+        )
+
+        self._handles["test_samples"] = ax.imshow(
+            np.squeeze(grid), interpolation="none"
+        )
+        ax.axis("off")
+
+        self._handles["test_samples"].set_cmap(cmap)
+        self._handles["test_samples"].set_clim(vmin=vmin, vmax=vmax)
+        ax.set_title("Test samples", fontsize=self._labelsize)
+
+        text_kwargs = {
+            "horizontalalignment": "center",
+            "verticalalignment": "center",
+            "transform": ax.transAxes,
+            "fontsize": 9,
+        }
+        ax.text(
+            -0.11,
+            -0.10,
+            r"$\log p_{\Theta}(\vec{x})$",
+            **text_kwargs,
+        )
+        ax.text(
+            -0.11,
+            -0.45,
+            r"$\log p_{\Theta^{\mathrm{gen}}}(\vec{x})$",
+            **text_kwargs,
+        )
+
+        for n in range(N):
+            xpos = 0.98 * n / N + 1 / 2 / N
+            self._handles[f"marginals-{n}"] = ax.text(
+                xpos,
+                -0.10,
+                "",
+                **text_kwargs,
+            )
+            self._handles[f"marginals-{n}-gen"] = ax.text(
+                xpos,
+                -0.45,
+                f"{self._test_marginals_gen[n]:.1f}",
+                **text_kwargs,
+            )
+
+    def _viz_marginals(self, marginals):
+        assert self._test_samples is not None
+        N = self._test_samples.shape[0]
+        for n in range(N):
+            assert f"marginals-{n}" in self._handles
+            self._handles[f"marginals-{n}"].set_text(f"{marginals[n]:.1f}")
+
+    def _viz_epoch(self, epoch, F, theta, marginals=None):
         pies = theta["pies"]
         inds_sort = (
             to.argsort(pies, descending=True) if self._sort_acc_to_desc_priors else None
@@ -287,8 +391,10 @@ class Visualizer(object):
         self._viz_pies(epoch, pies, inds_sort=inds_sort)
         self._viz_free_energy()
         self._viz_sigma2()
+        if marginals is not None:
+            self._viz_marginals(marginals)
 
-    def process_epoch(self, epoch, F, theta):
+    def process_epoch(self, epoch, F, theta, marginals=None):
         memory = self._memory
         [
             v.append(
@@ -297,7 +403,7 @@ class Visualizer(object):
             for k, v in memory.items()
         ]
         if epoch % self._viz_every == 0:
-            self._viz_epoch(epoch, F, theta)
+            self._viz_epoch(epoch, F, theta, marginals)
             self._save_epoch(epoch)
 
     def _save_epoch(self, epoch):
