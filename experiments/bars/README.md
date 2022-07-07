@@ -12,15 +12,22 @@ conda activate tvo
 
 
 ## Get started
-The experiment can be started with
+The standard bars test can be started with
 
 ```bash
 python main.py
 ```
 
-To exploit GPU parallelization, run `env TVO_GPU=0 python main.py`. This requires a cudatoolkit installation.
+To run the experiment using correlated bars, execute:
 
-Possible options are:
+```bash
+python main.py --correlated
+```
+
+
+## Options
+
+Possible options of the experiment are:
 
 ```bash
 usage: Bars Test for TVAE [-h] [--output_directory OUTPUT_DIRECTORY] [--H_gen H_GEN] [--bar_amp BAR_AMP] [--no_data_points NO_DATA_POINTS] [--correlated]
@@ -67,3 +74,6 @@ optional arguments:
 ```
 
 
+## GPU execution
+
+To exploit GPU parallelization, run `env TVO_GPU=0 python main.py ...`. GPU execution requires a cudatoolkit installation.
