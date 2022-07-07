@@ -101,28 +101,20 @@ def bars_test():
     )
 
     # generate data for measuring test likelihoods
-    n_violate_corr, n_violate_sparse, n_ok = len(discourage), 2, 3
+    n_violate_corr, n_ok = len(discourage), 5
     hidden_state = to.zeros(
-        (n_violate_corr + n_violate_sparse + n_ok, args.H_gen),
+        (n_violate_corr + n_ok, args.H_gen),
         dtype=to.bool,
         device=DEVICE,
     )
     # violate imposed correlation
     for n, (h1, h2) in enumerate(discourage):
         hidden_state[n][[h1, h2]] = True
-    # violate imposed sparsity
-    for n in range(n_violate_sparse):
-        inds_h = np.random.choice(args.H_gen, (int(0.7 * args.H_gen),), replace=False)
-        hidden_state[n + n_violate_corr][inds_h] = True
-    # conform with correlation and sparsity
-    for n in range(n_ok):
-        choice = [
-            h
-            for h in range(args.H_gen)
-            if h not in np.unique(np.asarray(discourage).flatten())
-        ]
-        inds_h = np.random.choice(choice, (int(pi_gen * args.H_gen),), replace=False)
-        hidden_state[n_violate_corr + n_violate_sparse + n][inds_h] = True
+    # conform with correlation
+    inds_discourage = np.unique(np.asarray(discourage).flatten())
+    hidden_state[n_violate_corr:][
+        :, [x for x in range(args.H_gen) if x not in inds_discourage]
+    ] = (to.rand((n_ok, args.H_gen - len(inds_discourage))) < pi_gen)
     uncorrelated_gen_model = GaussianTVAE(
         W_init=[to.eye(args.H_gen, **dtype_device_kwargs), gfs.t()], **gen_model_kwargs
     )
@@ -174,7 +166,7 @@ def bars_test():
             "W": gfs.cpu(),
         },
         L_gen=ll_gen,
-        test_samples=test_data.cpu() if compute_ll else None,
+        test_samples=test_data.cpu() if compute_ll and args.correlated else None,
         test_marginals_gen=compute_full_log_marginals(gen_model, test_data)
         if compute_ll
         else None,
@@ -193,7 +185,7 @@ def bars_test():
                 "W": get_singleton_means(train_model.theta).T,
             },
             marginals=compute_full_log_marginals(train_model, test_data)
-            if compute_ll
+            if compute_ll and args.correlated
             else None,
         )
 

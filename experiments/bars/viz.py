@@ -176,7 +176,7 @@ class Visualizer(object):
         self._handles["W"].set_cmap(cmap)
         self._handles["W"].set_clim(vmin=vmin, vmax=vmax)
         ax.set_title(
-            r"$\vec{\mu}(\vec{e_h};W)$" + "@{}".format(epoch), fontsize=self._labelsize
+            r"$\vec{\mu}(\vec{e}_h;W)$" + "@{}".format(epoch), fontsize=self._labelsize
         )
 
     def _viz_free_energy(self):
