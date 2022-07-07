@@ -11,11 +11,11 @@ import torch as to
 
 from tvo import get_device
 from tvo.exp import FullEMConfig, EVOConfig, ExpConfig, Training
-from tvo.models import BSC, GaussianTVAE
+from tvo.models import GaussianTVAE
 
 from params import get_args
-from utils import stdout_logger, get_singleton_means
-from data import get_bars_gfs, get_W0, generate_data_and_write_to_h5
+from utils import stdout_logger, get_singleton_means, compute_full_log_marginals
+from data import get_bars_gfs, generate_data_and_write_to_h5
 from viz import Visualizer
 
 DEVICE = get_device()
@@ -73,24 +73,20 @@ def bars_test():
     gfs = get_bars_gfs(no_bars=args.H_gen, bar_amp=args.bar_amp, **dtype_device_kwargs)
     assert gfs.shape == (D, args.H_gen)
     pi_gen = args.pi_gen if args.pi_gen is not None else 2 / args.H_gen
-    gen_model = (
-        GaussianTVAE(
-            W_init=[get_W0(args.H_gen, **dtype_device_kwargs), gfs.t()],
-            b_init=[to.zeros(s, **dtype_device_kwargs) for s in [args.H_gen, D]],
-            sigma2_init=to.tensor([args.sigma2_gen], **dtype_device_kwargs),
-            pi_init=to.full((args.H_gen,), pi_gen, **dtype_device_kwargs),
-            precision=PRECISION,
-        )
-        if args.correlated
-        else BSC(
-            H=args.H_gen,
-            D=D,
-            W_init=gfs,
-            sigma2_init=to.tensor([args.sigma2_gen], **dtype_device_kwargs),
-            pies_init=to.full((args.H_gen,), pi_gen, **dtype_device_kwargs),
-            precision=PRECISION,
-        )
-    )
+
+    W0 = to.eye(args.H_gen, **dtype_device_kwargs)
+    discourage = ((0, 1), (args.H_gen - 1, 0))
+    if args.correlated:
+        for h1, h2 in discourage:
+            W0[h1, h2] = -2
+    gen_model_kwargs = {
+        "b_init": [to.zeros(s, **dtype_device_kwargs) for s in [args.H_gen, D]],
+        "sigma2_init": to.tensor([args.sigma2_gen], **dtype_device_kwargs),
+        "pi_init": to.full((args.H_gen,), pi_gen, **dtype_device_kwargs),
+        "precision": PRECISION,
+    }
+    gen_model = GaussianTVAE(W_init=[W0, gfs.t()], **gen_model_kwargs)
+
     compute_ll = args.H_gen <= 10  # too slow otherwise
     print(
         "Generating training dataset"
@@ -100,12 +96,32 @@ def bars_test():
             else ""
         )
     )
-    data, theta_gen, ll_gen = generate_data_and_write_to_h5(
+    train_data, theta_gen, ll_gen = generate_data_and_write_to_h5(
         gen_model, data_file, args.no_data_points, compute_ll
     )
 
+    # generate data for measuring test likelihoods
+    n_violate_corr, n_ok = len(discourage), 5
+    hidden_state = to.zeros(
+        (n_violate_corr + n_ok, args.H_gen),
+        dtype=to.bool,
+        device=DEVICE,
+    )
+    # violate imposed correlation
+    for n, (h1, h2) in enumerate(discourage):
+        hidden_state[n][[h1, h2]] = True
+    # conform with correlation
+    inds_discourage = np.unique(np.asarray(discourage).flatten())
+    hidden_state[n_violate_corr:][
+        :, [x for x in range(args.H_gen) if x not in inds_discourage]
+    ] = (to.rand((n_ok, args.H_gen - len(inds_discourage))) < pi_gen)
+    uncorrelated_gen_model = GaussianTVAE(
+        W_init=[to.eye(args.H_gen, **dtype_device_kwargs), gfs.t()], **gen_model_kwargs
+    )
+    test_data = uncorrelated_gen_model.generate_data(hidden_state=hidden_state)
+
     # initialize model
-    model = GaussianTVAE(
+    train_model = GaussianTVAE(
         shape=[D, H_train, H_train],
         min_lr=args.min_lr,
         max_lr=args.max_lr,
@@ -132,7 +148,10 @@ def bars_test():
     exp_config = ExpConfig(batch_size=args.batch_size, output=training_file)
     print("Initializing experiment")
     exp = Training(
-        conf=exp_config, estep_conf=estep_conf, model=model, train_data_file=data_file
+        conf=exp_config,
+        estep_conf=estep_conf,
+        model=train_model,
+        train_data_file=data_file,
     )
 
     # initialize visualizer
@@ -140,13 +159,17 @@ def bars_test():
     visualizer = Visualizer(
         viz_every=args.viz_every if args.viz_every is not None else args.no_epochs,
         output_directory=output_directory,
-        datapoints=data[:15].cpu(),
+        train_samples=train_data[:15].cpu(),
         theta_gen={
             "pies": theta_gen["pies"].detach().cpu(),
             "sigma2": theta_gen["sigma2"].detach().cpu(),
             "W": gfs.cpu(),
         },
         L_gen=ll_gen,
+        test_samples=test_data.cpu() if compute_ll and args.correlated else None,
+        test_marginals_gen=compute_full_log_marginals(gen_model, test_data)
+        if compute_ll
+        else None,
         gif_framerate=args.gif_framerate,
     )
 
@@ -157,10 +180,13 @@ def bars_test():
             epoch=epoch,
             F=summary._results["train_F"],
             theta={
-                "pies": model.theta["pies"].clone().detach().cpu(),
-                "sigma2": model.theta["sigma2"].clone().detach().cpu(),
-                "W": get_singleton_means(model.theta).T,
+                "pies": train_model.theta["pies"].clone().detach().cpu(),
+                "sigma2": train_model.theta["sigma2"].clone().detach().cpu(),
+                "W": get_singleton_means(train_model.theta).T,
             },
+            marginals=compute_full_log_marginals(train_model, test_data)
+            if compute_ll and args.correlated
+            else None,
         )
 
     visualizer.finalize()

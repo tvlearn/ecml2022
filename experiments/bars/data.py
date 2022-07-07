@@ -7,9 +7,8 @@ import h5py
 import torch as to
 from torch import Tensor
 from typing import Tuple, Optional, Dict
-
 from tvo.utils.model_protocols import Sampler, Trainable
-from tvo.variational import FullEM
+from utils import compute_full_log_marginals
 
 
 def get_bars_gfs(
@@ -48,42 +47,6 @@ def get_bars_gfs(
     return W.view((D, no_bars))
 
 
-def get_W0(
-    H: int, dtype: to.dtype = to.float32, device: to.device = to.device("cpu")
-) -> to.Tensor:
-    """Set decoder weights to enforce inhibition/excitation of bar combinations
-
-    :param H: Number of bars
-    :param dtype: torch.dtype of output tensor
-    :param device: torch.device of output tensor
-    :return: W0 weight matrix
-    """
-    W0 = to.eye(H, dtype=dtype, device=device)
-    W0[0, 1] = -2  # discourage bar combination (first, second)
-    W0[-1, 0] = -2  # discourage bar combination (last, first)
-    return W0
-
-
-def _compute_log_likelihood(model: Trainable, data: Tensor) -> float:
-    no_data_points = data.shape[0]
-    return (
-        to.logsumexp(
-            model.log_joint(
-                data=data,
-                states=FullEM(
-                    N=no_data_points,
-                    H=model.shape[1],
-                    precision=model.config["precision"],
-                ).K,
-            ),
-            dim=1,
-        )
-        .sum(dim=0)
-        .item()
-        / no_data_points
-    )
-
-
 def _store_as_h5(to_store_dict: Dict[str, to.Tensor], output_name: str):
     os.makedirs(os.path.split(output_name)[0], exist_ok=True)
     with h5py.File(output_name, "w") as f:
@@ -117,7 +80,9 @@ def generate_data_and_write_to_h5(
     ll_gen = None
     if compute_ll:
         assert isinstance(model, Trainable)  # to make mypy happy
-        ll_gen = _compute_log_likelihood(model, data)
+        ll_gen = (
+            compute_full_log_marginals(model, data).sum(dim=0).item() / data.shape[0]
+        )
 
     to_store_dict = {
         **{f"{k}_gen": model.theta[k] for k in model.theta},  # type: ignore

@@ -7,6 +7,8 @@ import torch as to
 from typing import Dict
 from tvo import get_device
 from tvo.models import GaussianTVAE
+from tvo.variational import FullEM
+from tvo.utils.model_protocols import Trainable
 
 
 class stdout_logger(object):
@@ -30,6 +32,28 @@ class stdout_logger(object):
         # this handles the flush command by doing nothing.
         # you might want to specify some extra behavior here.
         pass
+
+
+def compute_full_log_marginals(model: Trainable, data: to.Tensor) -> to.Tensor:
+    """Compute log(p_Theta(xVec^n)) summing over full latent space
+
+    :param model: Generative model
+    :param data: Data points, is (N, D)
+    :return: Log marginals, is (N,)
+    """
+    return (
+        to.logsumexp(
+            model.log_joint(
+                data=data,
+                states=FullEM(
+                    N=data.shape[0],
+                    H=model.shape[1],
+                    precision=model.config["precision"],
+                ).K,
+            ),
+            dim=1,
+        )
+    ).detach()
 
 
 def get_singleton_means(theta: Dict[str, to.Tensor]) -> to.Tensor:
