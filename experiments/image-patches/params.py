@@ -19,7 +19,7 @@ data_parser.add_argument(
     dest="N",
     type=int,
     help="Number of patches to extract",
-    default=1000,
+    default=100000,
 )
 
 data_parser.add_argument(
@@ -35,7 +35,7 @@ patch_size_parser.add_argument(
     type=int,
     nargs=2,
     help="Patch (height, width)",
-    default=[8, 8],
+    default=[16, 16],
 )
 
 train_io_parser = argparse.ArgumentParser(add_help=False)
@@ -43,7 +43,7 @@ train_io_parser.add_argument(
     "--data_file",
     type=str,
     help="HDF5 file with image patches",
-    default="./data/image-P8x8-N1000.h5",
+    default="./data/image-P16x16-N100000.h5",
 )
 train_io_parser.add_argument(
     "--output_directory",
@@ -66,13 +66,13 @@ Ksize_parser.add_argument(
     "--Ksize",
     type=int,
     help="Size of the K sets (i.e., S=|K|)",
-    default=30,
+    default=100,
 )
 Ksize_parser.add_argument(
     "-H",
     type=int,
     help="Latent vector size H",
-    default=10,
+    default=300,
 )
 
 tvae_parser = argparse.ArgumentParser(add_help=False)
@@ -85,14 +85,14 @@ tvae_parser.add_argument(
 tvae_parser.add_argument(
     "--max_lr",
     type=float,
-    default=0.1,
+    default=0.001,
     help="maximal learning rate",
 )
 
 tvae_parser.add_argument(
     "--epochs_per_half_cycle",
     type=int,
-    default=10,
+    default=5,
     help="epochs per half cycle of learning rate scheduler",
 )
 
@@ -117,21 +117,21 @@ variational_parser.add_argument(
     "--no_parents",
     type=int,
     help="Number of parental states to select per generation",
-    default=20,
+    default=8,
 )
 
 variational_parser.add_argument(
     "--no_children",
     type=int,
     help="Number of children to evolve per generation",
-    default=2,
+    default=7,
 )
 
 variational_parser.add_argument(
     "--no_generations",
     type=int,
     help="Number of generations to evolve",
-    default=1,
+    default=2,
 )
 
 
@@ -140,7 +140,7 @@ experiment_parser.add_argument(
     "--no_epochs",
     type=int,
     help="Number of epochs to train",
-    default=200,
+    default=100,
 )
 
 experiment_parser.add_argument(
