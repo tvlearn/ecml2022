@@ -16,7 +16,7 @@ from utils import stdout_logger, get_timestamp, get_singleton_means
 from viz import viz_bound, viz_pies
 
 DEVICE = get_device()
-PRECISION = to.float32
+PRECISION = to.float64
 dtype_device_kwargs = {"dtype": PRECISION, "device": DEVICE}
 
 
@@ -119,7 +119,7 @@ def natural_image_patches():
     bound_history = []
     for summary in exp.run(args.no_epochs):
         summary.print()
-        inds_pies_sort = to.argsort(model.theta["pies"].detach())
+        inds_pies_sort = to.argsort(model.theta["pies"].detach(), descending=True)
         pies_sorted = model.theta["pies"].detach().cpu()[inds_pies_sort]
         gfs_sorted = (
             get_singleton_means(model.theta)[inds_pies_sort]
