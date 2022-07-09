@@ -26,27 +26,27 @@ def get_args():
         type=int,
         nargs="+",
         help="Decoder shape excluding no. obsersables, H0-H1-...",
-        default=[10, 10],
+        default=[32, 512],
     )
 
     parser.add_argument(
         "--min_lr",
         type=float,
-        default=0.0001,
+        default=0.0004,
         help="minimal learning rate",
     )
 
     parser.add_argument(
         "--max_lr",
         type=float,
-        default=0.1,
+        default=0.009,
         help="maximal learning rate",
     )
 
     parser.add_argument(
         "--epochs_per_half_cycle",
         type=int,
-        default=10,
+        default=80,
         help="epochs per half cycle of learning rate scheduler",
     )
 
@@ -54,7 +54,7 @@ def get_args():
         "--Ksize",
         type=int,
         help="Size of the K sets (i.e., S=|K|)",
-        default=30,
+        default=20,
     )
 
     parser.add_argument(
@@ -76,14 +76,14 @@ def get_args():
         "--no_parents",
         type=int,
         help="Number of parental states to select per generation",
-        default=20,
+        default=15,
     )
 
     parser.add_argument(
         "--no_children",
         type=int,
         help="Number of children to evolve per generation",
-        default=2,
+        default=10,
     )
 
     parser.add_argument(
@@ -97,13 +97,13 @@ def get_args():
         "--no_epochs",
         type=int,
         help="Number of epochs to train",
-        default=200,
+        default=500,
     )
 
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=32,
+        default=128,
         help="batch size",
     )
 
