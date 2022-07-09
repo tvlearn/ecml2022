@@ -23,6 +23,7 @@ def viz_bound(png_file: str, bounds: List[float], labelsize: int = LABELSIZE):
     plt.tight_layout()
     plt.savefig(png_file)
     print(f"Wrote {png_file}")
+    plt.close()
 
 
 def viz_pies(png_file: str, pies: to.Tensor, labelsize: int = LABELSIZE):
@@ -50,3 +51,4 @@ def viz_pies(png_file: str, pies: to.Tensor, labelsize: int = LABELSIZE):
     plt.tight_layout()
     plt.savefig(png_file)
     print(f"Wrote {png_file}")
+    plt.close()
