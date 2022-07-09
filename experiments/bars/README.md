@@ -1,10 +1,10 @@
 # Bars Test
 
-Code for standard and correlated bars tests.
+Standard and correlated bars tests.
 
 
 ## Requirements
-To run this example, make sure to have completed the installation instructions [described here](../../README.md) and to have the `tvo` environment activated.
+To run the experiment, make sure to have completed the installation instructions [described here](../../README.md) and to have the `tvo` environment activated.
 
 ```bash
 conda activate tvo
@@ -12,7 +12,7 @@ conda activate tvo
 
 
 ## Get started
-The standard bars test can be started with
+For a standard bars test, run:
 
 ```bash
 python main.py
@@ -27,7 +27,7 @@ python main.py --correlated
 
 ## Options
 
-Possible options of the experiment are:
+Possible options are:
 
 ```bash
 usage: Bars Test for TVAE [-h] [--output_directory OUTPUT_DIRECTORY] [--H_gen H_GEN] [--bar_amp BAR_AMP] [--no_data_points NO_DATA_POINTS] [--correlated]
