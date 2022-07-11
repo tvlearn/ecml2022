@@ -136,7 +136,7 @@ def get_args():
         "--no_epochs",
         type=int,
         help="Number of epochs to train",
-        default=200,
+        default=400,
     )
 
     parser.add_argument(
@@ -144,21 +144,6 @@ def get_args():
         type=int,
         default=32,
         help="batch size",
-    )
-
-    parser.add_argument(
-        "--viz_every",
-        type=int,
-        help="Create visualizations every Xth epoch. Set to no_epochs if not specified.",
-        default=1,
-    )
-
-    parser.add_argument(
-        "--gif_framerate",
-        type=str,
-        help="Frames per second for gif animation (e.g., 2/1 for 2 fps). If not specified,"
-        "no gif will be produced.",
-        default=None,
     )
 
     return parser.parse_args()
