@@ -19,20 +19,10 @@ python get-data.py
 ```
 
 The results reported in the paper were obtained using images patches randomly sampled from the full data set of van Hateren et al. [1]. For storage reasons, we here provide one exemplary image from the full data set. 
-Possible options to sample patches are:
+Possible options to sample patches can be listed with:
 
 ```bash
-usage: Build data set of whitened image patches extracted from image file [-h] [--image_file IMAGE_FILE] [-N N] [--timestamp]
-                                                                          [--patch_size PATCH_SIZE PATCH_SIZE]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --image_file IMAGE_FILE
-                        Full path to image to extract patches from (png, jpg, ... file) (default: ./data/image.tiff)
-  -N N, --no_patches N  Number of patches to extract (default: 1000)
-  --timestamp           Whether to append timestamp to file name of written out training data set (default: False)
-  --patch_size PATCH_SIZE PATCH_SIZE
-                        Patch (height, width) (default: [8, 8])
+python get-data.py -h
 ```
 
 ## Train
