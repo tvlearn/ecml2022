@@ -2,9 +2,6 @@
 # Copyright (C) 2022 Machine Learning Group of the University of Oldenburg.
 # Licensed under the Academic Free License version 3.0
 
-import os
-import re
-import glob
 import math
 import numpy as np
 import torch as to
@@ -18,17 +15,14 @@ class Visualizer(object):
     def __init__(
         self,
         output_directory,
-        viz_every,
         train_samples,
         theta_gen,
         L_gen=None,
         test_samples=None,
         test_marginals_gen=None,
         sort_acc_to_desc_priors=True,
-        gif_framerate=None,
     ):
         self._output_directory = output_directory
-        self._viz_every = viz_every
         self._train_samples = train_samples
         self._theta_gen = theta_gen
         self._L_gen = L_gen
@@ -39,7 +33,6 @@ class Visualizer(object):
         self._cmap_train_samples = (
             plt.cm.gray if train_samples.dtype == to.uint8 else plt.cm.jet
         )
-        self._gif_framerate = gif_framerate
         self._labelsize = 10
         self._legendfontsize = 8
 
@@ -402,59 +395,14 @@ class Visualizer(object):
             )
             for k, v in memory.items()
         ]
-        if epoch % self._viz_every == 0:
-            self._viz_epoch(epoch, F, theta, marginals)
-            self._save_epoch(epoch)
+        self._viz_epoch(epoch, F, theta, marginals)
+        self._save_epoch(epoch)
 
     def _save_epoch(self, epoch):
         output_directory = self._output_directory
-        png_file = "{}/training{}.png".format(
-            output_directory,
-            "_epoch{:04d}".format(epoch) if self._gif_framerate is not None else "",
-        )
+        png_file = "{}/training.png".format(output_directory)
         plt.savefig(png_file)
         print("\tWrote " + png_file)
 
-    def _write_gif(self, framerate):
-        output_directory = self._output_directory
-        gif_file = "{}/training.gif".format(output_directory)
-        print("Creating {} ...".format(gif_file), end="")
-        # work-around for correct color display from https://stackoverflow.com/a/58832086
-        os.system(
-            "ffmpeg -y -framerate {} -i {}/training_epoch%*.png -vf palettegen \
-            {}/palette.png".format(
-                framerate, output_directory, output_directory
-            )
-        )
-        os.system(
-            "ffmpeg -y -framerate {} -i {}/training_epoch%*.png -i {}/palette.png -lavfi \
-            paletteuse {}/training.gif".format(
-                framerate, output_directory, output_directory, output_directory
-            )
-        )
-        print("Done")
-
-        png_files = glob.glob("{}/training_epoch*.png".format(output_directory))
-        png_files.sort(
-            key=lambda var: [
-                int(x) if x.isdigit() else x for x in re.findall(r"[^0-9]|[0-9]+", var)
-            ]
-        )
-        last_epoch_str = "_epoch{}".format(
-            png_files[-1].split("_epoch")[1].replace(".png", "")
-        )
-        for f in png_files:
-            if last_epoch_str in f:
-                old = f
-                new = f.replace(last_epoch_str, "_last_epoch")
-                os.rename(old, new)
-                print("Renamed {}->{}".format(old, new))
-            else:  # keep png of last epoch
-                os.remove(f)
-                print("Removed {}".format(f))
-        os.remove("{}/palette.png".format(output_directory))
-
     def finalize(self):
         plt.close()
-        if self._gif_framerate is not None:
-            self._write_gif(framerate=self._gif_framerate)

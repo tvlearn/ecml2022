@@ -50,7 +50,7 @@ def bars_test():
 
     print("Argument list:")
     for k in sorted(args_dict, key=lambda s: s.lower()):
-        print("{: <25} : {}".format(k, args_dict[k]))
+        print("\t{: <25} : {}".format(k, args_dict[k]))
 
     # determine directories to save output
     timestamp = datetime.datetime.fromtimestamp(time.time()).strftime(
@@ -157,7 +157,6 @@ def bars_test():
     # initialize visualizer
     print("Initializing visualizer")
     visualizer = Visualizer(
-        viz_every=args.viz_every if args.viz_every is not None else args.no_epochs,
         output_directory=output_directory,
         train_samples=train_data[:15].cpu(),
         theta_gen={
@@ -170,7 +169,6 @@ def bars_test():
         test_marginals_gen=compute_full_log_marginals(gen_model, test_data)
         if compute_ll
         else None,
-        gif_framerate=args.gif_framerate,
     )
 
     # run epochs
