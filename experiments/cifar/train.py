@@ -26,7 +26,7 @@ def cifar():
     args = get_args()
     print("Argument list:")
     for k in sorted(vars(args), key=lambda s: s.lower()):
-        print("{: <25} : {}".format(k, vars(args)[k]))
+        print("\t{: <25} : {}".format(k, vars(args)[k]))
 
     # determine directories to save output
     output_directory = (
