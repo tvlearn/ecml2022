@@ -14,6 +14,7 @@ We recommend [Anaconda](https://www.anaconda.com/) to manage the installation, a
 
 ```bash
 $ conda env create
+$ conda activate ecml2022
 ```
 
 The `tvo` package can be installed via:
