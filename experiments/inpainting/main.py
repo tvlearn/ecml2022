@@ -24,7 +24,6 @@ from utils import (
     stdout_logger,
     set_pixels_to_nan,
     store_as_h5,
-    get_epochs_from_every,
     eval_fn,
 )
 
@@ -53,20 +52,18 @@ def inpainting():
     print("Will write terminal output to {}".format(txt_file))
 
     # generate incomplete image and extract image patches
-    clean = to.tensor(imageio.imread(args.clean_image_file), **dtype_device_kwargs)
+    clean = to.tensor(imageio.imread(args.clean_image_file)).to(**dtype_device_kwargs)
     isrgb = clean.dim() == 3 and clean.shape[2] == 3
     incomplete = set_pixels_to_nan(clean, args.percentage)
     png_file = f"{args.output_directory}/incomplete-{args.percentage}missing.png"
-    plt.imsave(png_file, incomplete)
+    plt.imsave(png_file, incomplete.detach().cpu().numpy())
     print(f"Wrote {png_file}")
     OVP = MultiDimOverlappingPatches if isrgb else OverlappingPatches
     ovp = OVP(incomplete, args.patch_height, args.patch_width, patch_shift=1)
     train_data = ovp.get().t()
     store_as_h5({"data": train_data}, data_file)
 
-    isrgb = len(clean) == 3
     D = args.patch_height * args.patch_width * (3 if isrgb else 1)
-
     with h5py.File(data_file, "r") as f:
         N, D_read = f["data"].shape
         assert D == D_read
@@ -98,11 +95,10 @@ def inpainting():
     )
 
     # setup the experiment
-    reco_epochs = get_epochs_from_every(every=args.merge_every, total=args.no_epochs)
     exp_config = ExpConfig(
         batch_size=32,
         output=training_file,
-        reco_epochs=reco_epochs,
+        reco_epochs=to.arange(args.no_epochs),
         log_blacklist=[
             "train_lpj",
             "train_states",
@@ -123,7 +119,7 @@ def inpainting():
         summary.print()
 
         # merge reconstructed image patches and generate reconstructed image
-        merge = epoch in (reco_epochs + 1)
+        merge = ((epoch - 1) % args.merge_every) == 0
         assert hasattr(trainer, "train_reconstruction")
         reco = ovp.set_and_merge(trainer.train_reconstruction.t()) if merge else None
 
@@ -138,8 +134,14 @@ def inpainting():
         # visualize epoch
         if merge:
             psnr_str = f"{psnr:.2f}".replace(".", "_")
-            png_file = f"{args.output_directory}/reco-epoch{epoch}-psnr{psnr_str}.png"
-            plt.imsave(png_file, reco)
+            png_file = f"{args.output_directory}/reco-epoch{epoch-1}-psnr{psnr_str}.png"
+            _reco = reco.detach().cpu().numpy()
+            new_min, new_max = 0.0, 1.0
+            _reco = (
+                ((_reco - _reco.min()) * (new_max - new_min))
+                / (_reco.max() - _reco.min())
+            ) + new_min
+            plt.imsave(png_file, _reco)
             print(f"Wrote {png_file}")
 
     print("Finished")
