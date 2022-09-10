@@ -57,25 +57,6 @@ def store_as_h5(to_store_dict: Dict[str, to.Tensor], output_name: str) -> None:
     print(f"Wrote {output_name}")
 
 
-def get_epochs_from_every(every: int, total: int) -> to.Tensor:
-    """Return indices corresponding to every Xth. Sequence starts at (every - 1) and always
-    includes (total - 1) as last step.
-
-    :param every: Step interval
-    :param total: Total number of steps
-    :return: Step indices
-
-    Example:
-    >>> print(get_epochs_from_every(2, 9))
-    >>>
-    """
-    return to.unique(
-        to.cat(
-            (to.arange(start=every - 1, end=total, step=every), to.tensor([total - 1]))
-        )
-    )
-
-
 def eval_fn(
     target: Union[np.ndarray, to.Tensor],
     reco: Union[np.ndarray, to.Tensor],
