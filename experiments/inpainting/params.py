@@ -15,7 +15,7 @@ def get_args():
     p.add_argument(
         "image",
         type=str,
-        help="Benchmark image",
+        help="Benchmark",
         choices=["house-50", "castle-50", "castle-80"],
     )
     args = p.parse_args()
