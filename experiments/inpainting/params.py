@@ -31,7 +31,6 @@ def get_args():
         "castle-80": 12,
     }[args.image]
     args.Ksize = {"house-50": 64, "castle-50": 32, "castle-80": 64}[args.image]
-    args.Ksize = {"house-50": 64, "castle-50": 32, "castle-80": 64}[args.image]
     args.inner_net_shape = [512, 512]
     args.min_lr = 0.0001
     args.max_lr = {"house-50": 0.01, "castle-50": 0.00125, "castle-80": 0.001}[
