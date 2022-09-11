@@ -20,12 +20,7 @@ from tvutil.prepost import (
 )
 
 from params import get_args
-from utils import (
-    stdout_logger,
-    set_pixels_to_nan,
-    store_as_h5,
-    eval_fn,
-)
+from utils import stdout_logger, set_pixels_to_nan, store_as_h5, eval_fn
 
 DEVICE = tvo.get_device()
 PRECISION = to.float32
@@ -56,8 +51,12 @@ def inpainting():
     isrgb = clean.dim() == 3 and clean.shape[2] == 3
     incomplete = set_pixels_to_nan(clean, args.percentage)
     png_file = f"{args.output_directory}/incomplete-{args.percentage}missing.png"
-    plt.imsave(png_file, incomplete.detach().cpu().numpy())
-    print(f"Wrote {png_file}")
+    toviz = incomplete.detach().cpu().numpy() / 255
+    plt.imsave(
+        png_file,
+        np.tile(toviz[:, :, None], (1, 1, 3)) if not isrgb else toviz,
+        cmap="jet" if isrgb else "gray",
+    )
     OVP = MultiDimOverlappingPatches if isrgb else OverlappingPatches
     ovp = OVP(incomplete, args.patch_height, args.patch_width, patch_shift=1)
     train_data = ovp.get().t()
@@ -135,13 +134,12 @@ def inpainting():
         if merge:
             psnr_str = f"{psnr:.2f}".replace(".", "_")
             png_file = f"{args.output_directory}/reco-epoch{epoch-1}-psnr{psnr_str}.png"
-            _reco = reco.detach().cpu().numpy()
-            new_min, new_max = 0.0, 1.0
-            _reco = (
-                ((_reco - _reco.min()) * (new_max - new_min))
-                / (_reco.max() - _reco.min())
-            ) + new_min
-            plt.imsave(png_file, _reco)
+            toviz = reco.detach().cpu().numpy() / 255
+            plt.imsave(
+                png_file,
+                np.tile(toviz[:, :, None], (1, 1, 3)) if not isrgb else toviz,
+                cmap="jet" if isrgb else "gray",
+            )
             print(f"Wrote {png_file}")
 
     print("Finished")
