@@ -50,10 +50,12 @@ def denoising():
     clean = clean / args.norm if args.norm is not None else clean
     sigma = args.sigma / args.norm if args.norm is not None else args.sigma
     noisy = clean + sigma * to.randn_like(clean)
-    psnr = eval_fn(clean, noisy, data_range=255/args.norm if args.norm is not None else 255)
+    psnr = eval_fn(
+        clean, noisy, data_range=255 / args.norm if args.norm is not None else 255
+    )
     psnr_str = f"{psnr:.2f}".replace(".", "_")
     png_file = f"{args.output_directory}/noisy-psnr{psnr_str}.png"
-    plt.imsave(png_file, noisy.detach().cpu().numpy())
+    plt.imsave(png_file, noisy.detach().cpu().numpy(), cmap="gray")
     print(f"Wrote {png_file}")
     ovp = OverlappingPatches(noisy, args.patch_height, args.patch_width, patch_shift=1)
     train_data = ovp.get().t()
@@ -149,7 +151,11 @@ def denoising():
 
         # assess reconstruction quality in terms of PSNR
         psnr = (
-            eval_fn(clean, reco, data_range=255/args.norm if args.norm is not None else 255)
+            eval_fn(
+                clean,
+                reco,
+                data_range=255 / args.norm if args.norm is not None else 255,
+            )
             if merge
             else None
         )
@@ -163,7 +169,7 @@ def denoising():
         if merge:
             psnr_str = f"{psnr:.2f}".replace(".", "_")
             png_file = f"{args.output_directory}/reco-epoch{epoch-1}-psnr{psnr_str}.png"
-            plt.imsave(png_file, reco.detach().cpu().numpy())
+            plt.imsave(png_file, reco.detach().cpu().numpy(), cmap="gray")
             print(f"Wrote {png_file}")
 
     print("Finished")
