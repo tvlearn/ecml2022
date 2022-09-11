@@ -15,10 +15,7 @@ from tvo.exp import EVOConfig, ExpConfig, Training
 from tvo.models import GaussianTVAE
 from tvo.utils.param_init import init_sigma2_default
 
-from tvutil.prepost import (
-    OverlappingPatches,
-    MultiDimOverlappingPatches,
-)
+from tvutil.prepost import OverlappingPatches
 
 from params import get_args
 from utils import stdout_logger, store_as_h5, eval_fn
@@ -50,21 +47,19 @@ def denoising():
 
     # generate noisy image and extract image patches
     clean = to.tensor(imageio.imread(args.clean_image_file)).to(**dtype_device_kwargs)
-    isrgb = clean.dim() == 3 and clean.shape[2] == 3
     clean = clean / args.norm if args.norm is not None else clean
     sigma = args.sigma / args.norm if args.norm is not None else args.sigma
     noisy = clean + sigma * to.randn_like(clean)
-    psnr = eval_fn(clean, noisy, data_range=args.norm if args.norm is not None else 255)
+    psnr = eval_fn(clean, noisy, data_range=255/args.norm if args.norm is not None else 255)
     psnr_str = f"{psnr:.2f}".replace(".", "_")
     png_file = f"{args.output_directory}/noisy-psnr{psnr_str}.png"
     plt.imsave(png_file, noisy.detach().cpu().numpy())
     print(f"Wrote {png_file}")
-    OVP = MultiDimOverlappingPatches if isrgb else OverlappingPatches
-    ovp = OVP(noisy, args.patch_height, args.patch_width, patch_shift=1)
+    ovp = OverlappingPatches(noisy, args.patch_height, args.patch_width, patch_shift=1)
     train_data = ovp.get().t()
     store_as_h5({"data": train_data}, data_file)
 
-    D = args.patch_height * args.patch_width * (3 if isrgb else 1)
+    D = args.patch_height * args.patch_width
     with h5py.File(data_file, "r") as f:
         data = to.tensor(f["data"][...])
     N, D_read = data.shape
@@ -154,7 +149,7 @@ def denoising():
 
         # assess reconstruction quality in terms of PSNR
         psnr = (
-            eval_fn(clean, reco, data_range=args.norm if args.norm is not None else 255)
+            eval_fn(clean, reco, data_range=255/args.norm if args.norm is not None else 255)
             if merge
             else None
         )
