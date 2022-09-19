@@ -2,7 +2,7 @@
 
 ## Overview
 
-The [experiments](./experiments) directory contains implementations of the experiments described in the [paper](#reference). Execution requires an installation of the [Truncated Variational Optimization](https://github.com/tvlearn/tvo) (TVO) framework, which implements the Truncated Variational Autoencoder. Experiments furthermore leverage pre-/postprocessing and visualization utilities provided by [tvutil](https://github.com/tvlearn/tvutil).
+The [experiments](./experiments) directory contains implementations of the experiments described in the [paper](https://2022.ecmlpkdd.org/wp-content/uploads/2022/09/sub_1229.pdf). Execution requires an installation of the [Truncated Variational Optimization](https://github.com/tvlearn/tvo) (TVO) framework, which implements the Truncated Variational Autoencoder. Experiments furthermore leverage pre-/postprocessing and visualization utilities provided by [tvutil](https://github.com/tvlearn/tvutil).
 
 After following the [Setup](#setup) instructions described below, you will be able to turn to running the experiments. Please consult the READMEs in the experiments' sub-directories for further instructions.
 
