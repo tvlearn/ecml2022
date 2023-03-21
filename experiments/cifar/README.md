@@ -4,10 +4,10 @@ Train TVAE on CIFAR-10.
 
 
 ## Requirements
-To run the experiment, make sure to have completed the installation instructions [described here](../../README.md) and to have the `tvo` environment activated.
+To run the experiment, make sure to have completed the installation instructions [described here](../../README.md) and to have the `ecml2022` environment activated.
 
 ```bash
-conda activate tvo
+conda activate ecml2022
 ```
 
 
