@@ -2,7 +2,7 @@
 
 ## Overview
 
-The [experiments](./experiments) directory contains implementations of the experiments described in the [paper](https://2022.ecmlpkdd.org/wp-content/uploads/2022/09/sub_1229.pdf). Execution requires an installation of the [Truncated Variational Optimization](https://github.com/tvlearn/tvo) (TVO) framework, which implements the Truncated Variational Autoencoder. Experiments furthermore leverage pre-/postprocessing and visualization utilities provided by [tvutil](https://github.com/tvlearn/tvutil).
+The [experiments](./experiments) directory contains implementations of the experiments described in the [paper](https://link.springer.com/chapter/10.1007/978-3-031-26409-2_22). Execution requires an installation of the [Truncated Variational Optimization](https://github.com/tvlearn/tvo) (TVO) framework, which implements the Truncated Variational Autoencoder. Experiments furthermore leverage pre-/postprocessing and visualization utilities provided by [tvutil](https://github.com/tvlearn/tvutil).
 
 After following the [Setup](#setup) instructions described below, you will be able to turn to running the experiments. Please consult the READMEs in the experiments' sub-directories for further instructions.
 
@@ -39,10 +39,22 @@ $ cd ..
 ## Reference
 
 ```bibtex
-@inproceedings{DrefsEtAl2022,
-  title={{Direct Evolutionary Optimization of Variational Autoencoders With Binary Latents}},
-  author={Drefs, Jakob and Guiraud, Enrico and Panagiotou Filippos and J{\"o}rg L{\"u}cke},
-  booktitle={Machine Learning and Knowledge Discovery in Databases. Research Track, accepted},
-  year={2022}
+@InProceedings{DrefsGuiraudEtAl2022,
+  author="Drefs, Jakob
+  and Guiraud, Enrico
+  and Panagiotou, Filippos
+  and L{\"u}cke, J{\"o}rg",
+  editor="Amini, Massih-Reza
+  and Canu, St{\'e}phane
+  and Fischer, Asja
+  and Guns, Tias
+  and Kralj Novak, Petra
+  and Tsoumakas, Grigorios",
+  title="Direct Evolutionary Optimization of Variational Autoencoders with Binary Latents",
+  booktitle="Machine Learning and Knowledge Discovery in Databases",
+  year="2023",
+  publisher="Springer Nature Switzerland",
+  address="Cham",
+  pages="357--372",
 }
 ```
